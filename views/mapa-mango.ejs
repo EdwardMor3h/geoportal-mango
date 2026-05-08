@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Geoportal Mango</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+:root{--verde:#2e7d32;--verde-claro:#4caf50;--verde-light:#e8f5e9;--naranja:#f57c00;--sidebar-w:280px;--header-h:56px;--shadow:0 2px 12px rgba(0,0,0,0.12);--radius:10px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;overflow:hidden}
+#header{position:fixed;top:0;left:0;right:0;height:var(--header-h);background:linear-gradient(135deg,#1b5e20,#2e7d32,#388e3c);display:flex;align-items:center;gap:14px;padding:0 20px;z-index:2000;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+#header .logo{font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;color:#fff;line-height:1.2}
+#header .logo span{color:#a5d6a7;font-weight:400;font-size:12px;display:block}
+#header .icon{font-size:28px}
+#header .user{margin-left:auto;color:#c8e6c9;font-size:12px;display:flex;align-items:center;gap:8px}
+#header .user strong{color:#fff}
+#btn-toggle{background:rgba(255,255,255,0.15);color:#fff;border:none;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0}
+#btn-toggle:hover{background:rgba(255,255,255,0.25)}
+#sidebar{position:fixed;top:var(--header-h);left:0;width:var(--sidebar-w);height:calc(100vh - var(--header-h));background:#fff;z-index:1400;box-shadow:2px 0 16px rgba(0,0,0,.12);display:flex;flex-direction:column;transition:transform .3s cubic-bezier(.4,0,.2,1);overflow:hidden}
+#sidebar.collapsed{transform:translateX(calc(-1 * var(--sidebar-w)))}
+#buscar-sec{padding:16px;background:var(--verde-light);border-bottom:1px solid #c8e6c9}
+#buscar-sec label{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:600;color:var(--verde);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px}
+#input-dni{width:100%;padding:9px 12px;border:1.5px solid #c8e6c9;border-radius:var(--radius);font-size:13px;outline:none;background:#fff;transition:border-color .2s}
+#input-dni:focus{border-color:var(--verde)}
+#dni-res{margin-top:8px;font-size:12px;color:var(--verde);min-height:16px;font-weight:500}
+#sb-scroll{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#c8e6c9 transparent}
+.sec{padding:12px 16px 4px}
+.sec-title{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.8px;background:var(--verde);padding:6px 10px;border-radius:6px;margin-bottom:0;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;transition:opacity .15s}
+.sec-title:hover{opacity:0.85}
+.sec-title.amb{background:var(--naranja)}
+.sec-arrow{font-size:10px}
+.sec-items{overflow:hidden;transition:max-height .3s ease;max-height:400px}
+.sec-items.collapsed{max-height:0}
+.pitem{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;margin-top:4px;transition:background .15s;border:1.5px solid transparent}
+.pitem:hover{background:var(--verde-light)}
+.pitem.active{background:var(--verde-light);border-color:var(--verde-claro)}
+.pitem.act-amb{background:#fff3e0;border-color:var(--naranja)}
+.pdot{width:14px;height:14px;border-radius:50%;border:2px solid #ccc;flex-shrink:0;transition:all .2s}
+.pitem.active .pdot{background:var(--verde-claro);border-color:var(--verde)}
+.pitem.act-amb .pdot{background:var(--naranja);border-color:#e65100}
+.plabel{font-size:12.5px;color:#333}
+.pitem.active .plabel{color:var(--verde);font-weight:600}
+.pitem.act-amb .plabel{color:var(--naranja);font-weight:600}
+#leyenda{margin:6px 16px 0;background:#fafafa;border:1px solid #e0e0e0;border-radius:var(--radius);padding:8px 12px;display:none}
+#leyenda.show{display:block}
+#ley-title{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;color:#333;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.li{display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:11px;color:#555}
+.lc{width:16px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.1);flex-shrink:0}
+/* VIGOROSIDAD GENERAL */
+#vig-general{margin:6px 16px 8px;background:#f1f8e9;border:1px solid #c5e1a5;border-radius:var(--radius);padding:8px 12px;display:none}
+#vig-general.show{display:block}
+#vig-gen-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+#vig-gen-title{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:.4px}
+#vig-clear{background:none;border:none;color:#999;font-size:10px;cursor:pointer;padding:0}
+#vig-clear:hover{color:#d32f2f}
+#vig-hint{font-size:10px;color:#aaa;font-style:italic;padding:4px 0}
+.vig-row{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #dcedc8;font-size:11px}
+.vig-row:last-child{border-bottom:none}
+.vig-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,.15)}
+.vig-lote{font-weight:600;color:#333;width:36px;font-size:10px}
+.vig-prod{flex:1;color:#666;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vig-ndvi{font-size:10px;font-weight:600;text-align:right;white-space:nowrap}
+.vig-tag{font-size:9px;padding:1px 5px;border-radius:8px;color:#fff;margin-left:3px}
+#map{position:fixed;top:var(--header-h);left:var(--sidebar-w);right:0;bottom:0;transition:left .3s cubic-bezier(.4,0,.2,1)}
+#map.full{left:0}
+.maplibregl-popup-content{border-radius:12px!important;padding:0!important;box-shadow:0 4px 20px rgba(0,0,0,.18)!important;min-width:220px;overflow:hidden}
+.ph{background:linear-gradient(135deg,#2e7d32,#4caf50);color:#fff;padding:10px 14px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700}
+.pb{padding:12px 14px;font-size:12.5px;color:#444;line-height:1.8}
+.pb b{color:#2e7d32}
+.pndvi{margin-top:8px;padding:6px 10px;background:var(--verde-light);border-radius:6px;font-size:12px}
+#panel-amb{position:fixed;bottom:20px;left:calc(var(--sidebar-w) + 10px);width:420px;background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.18);z-index:1200;display:none;overflow:hidden;transition:left .3s cubic-bezier(.4,0,.2,1)}
+#panel-amb.show{display:block}
+#pa-header{background:linear-gradient(135deg,var(--naranja),#fbc02d);color:#fff;padding:8px 14px;font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+#pa-header button{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1}
+#pa-body{padding:10px 12px}
+#rango-selector{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
+.rango-btn{padding:3px 9px;border-radius:6px;border:1.5px solid #e0e0e0;background:#fff;font-size:10px;font-weight:600;cursor:pointer;color:#666;transition:all .15s;font-family:'Montserrat',sans-serif}
+.rango-btn.active{background:var(--naranja);border-color:var(--naranja);color:#fff}
+#umbrales-info{font-size:10px;color:#888;text-align:center;margin-top:5px;padding:4px 6px;background:#fafafa;border-radius:6px}
+#pa-loading{text-align:center;padding:20px;color:#aaa;font-size:12px}
+#pa-canvas-wrap{position:relative;height:160px}
+</style>
+</head>
+<body>
+<script>
+window.USER_ZONA_ID = <%= locals.user && locals.user.zona_id ? locals.user.zona_id : 1 %>;
+window.MAPBOX_TOKEN = '<%= mapboxToken %>';
+</script>
+
+<div id="header">
+  <button id="btn-toggle" title="Mostrar/ocultar panel">☰</button>
+  <span class="icon">🥭</span>
+  <div class="logo">Geoportal de Monitoreo<span>Sistema de análisis agrícola — Mango</span></div>
+  <div class="user">👤 <strong><%= locals.user ? locals.user.nombre || locals.user.usuario : 'Usuario' %></strong></div>
+</div>
+
+<div id="sidebar">
+  <div id="buscar-sec">
+    <label>🔍 Buscar por DNI del productor</label>
+    <input id="input-dni" type="text" placeholder="Ej: 12345678" maxlength="8" autocomplete="off">
+    <div id="dni-res"></div>
+  </div>
+  <div id="sb-scroll">
+    <div class="sec">
+      <div class="sec-title" onclick="toggleSec('morf')">
+        <span>Parámetros Morfológicos</span>
+        <span class="sec-arrow" id="arrow-morf">▼</span>
+      </div>
+      <div class="sec-items" id="sec-morf">
+        <div class="pitem active" data-nombre="Vigorosidad del cultivo" onclick="activarCapa(this)"><div class="pdot"></div><span class="plabel">Vigorosidad del cultivo</span></div>
+        <div class="pitem" data-nombre="Altura de planta" onclick="activarCapa(this)"><div class="pdot"></div><span class="plabel">Altura de planta</span></div>
+        <div class="pitem" data-nombre="Actividad Fotosintética" onclick="activarCapa(this)"><div class="pdot"></div><span class="plabel">Actividad Fotosintética</span></div>
+        <div class="pitem" data-nombre="Concentración de Clorofila" onclick="activarCapa(this)"><div class="pdot"></div><span class="plabel">Concentración de Clorofila</span></div>
+        <div class="pitem" data-nombre="Nitrógeno Foliar" onclick="activarCapa(this)"><div class="pdot"></div><span class="plabel">Nitrógeno Foliar</span></div>
+      </div>
+    </div>
+
+    <!-- LEYENDA -->
+    <div id="leyenda" class="show">
+      <div id="ley-title">Vigorosidad del cultivo</div>
+      <div id="ley-items">
+        <div class="li"><div class="lc" style="background:#ffffff;border:1px solid #ccc"></div><span>≤ 0.20 — Muy bajo</span></div>
+        <div class="li"><div class="lc" style="background:#fec981"></div><span>0.20–0.55 — Bajo</span></div>
+        <div class="li"><div class="lc" style="background:#c4e687"></div><span>0.55–0.75 — Medio</span></div>
+        <div class="li"><div class="lc" style="background:#1a9641"></div><span>> 0.75 — Alto</span></div>
+      </div>
+    </div>
+
+    <!-- VIGOROSIDAD GENERAL -->
+    <div id="vig-general" class="show">
+      <div id="vig-gen-header">
+        <div id="vig-gen-title">🌿 Vigorosidad General</div>
+        <button id="vig-clear" onclick="limpiarVig()" title="Limpiar selección">✕ Limpiar</button>
+      </div>
+      <div id="vig-rows"><div id="vig-hint">👆 Haz clic en una parcela para ver su vigorosidad</div></div>
+    </div>
+
+    <div class="sec" style="margin-top:4px">
+      <div class="sec-title amb" onclick="toggleSec('amb')">
+        <span>Parámetros Ambientales</span>
+        <span class="sec-arrow" id="arrow-amb">▼</span>
+      </div>
+      <div class="sec-items" id="sec-amb">
+        <div class="pitem" data-nombre="Temperatura" data-field="field1" data-color="#d32f2f" data-unit="°C" onclick="activarAmb(this)"><div class="pdot"></div><span class="plabel">Temperatura</span></div>
+        <div class="pitem" data-nombre="Humedad" data-field="field2" data-color="#1565c0" data-unit="%" onclick="activarAmb(this)"><div class="pdot"></div><span class="plabel">Humedad</span></div>
+        <div class="pitem" data-nombre="Precipitaciones" data-field="field3" data-color="#0277bd" data-unit="mm" onclick="activarAmb(this)"><div class="pdot"></div><span class="plabel">Precipitaciones</span></div>
+        <div class="pitem" data-nombre="Radiación" data-field="field4" data-color="#f57c00" data-unit="W/m²" onclick="activarAmb(this)"><div class="pdot"></div><span class="plabel">Radiación</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<div id="panel-amb">
+  <div id="pa-header">
+    <span id="pa-titulo">Temperatura</span>
+    <button onclick="cerrarAmb()">×</button>
+  </div>
+  <div id="pa-body">
+    <div id="rango-selector"></div>
+    <div id="pa-loading">⏳ Cargando...</div>
+    <div id="pa-canvas-wrap" style="display:none"><canvas id="pa-canvas"></canvas></div>
+    <div id="umbrales-info" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+const THINGSPEAK_CHANNEL='3255217';
+const THINGSPEAK_API_KEY='QI1XODVEJBWJ82R0';
+const LIMA_OFFSET=-5*60*60*1000;
+function toLima(d){return new Date(d.getTime()+LIMA_OFFSET);}
+
+const LEYENDAS={
+  'Vigorosidad del cultivo':[{color:'#ffffff',label:'≤ 0.20 — Muy bajo'},{color:'#fec981',label:'0.20–0.55 — Bajo'},{color:'#c4e687',label:'0.55–0.75 — Medio'},{color:'#1a9641',label:'> 0.75 — Alto'}],
+  'Altura de planta':[{color:'#969696',label:'< 2m — Bajo'},{color:'#c8e639',label:'2–4m — Medio'},{color:'#2e7d32',label:'4–8m — Alto'},{color:'#d32f2f',label:'> 8m — Muy alto'}],
+  'Actividad Fotosintética':[{color:'#f3e5f5',label:'Baja'},{color:'#ab47bc',label:'Media'},{color:'#4a148c',label:'Alta'}],
+  'Concentración de Clorofila':[{color:'#fff9c4',label:'Baja'},{color:'#f9a825',label:'Media'},{color:'#e65100',label:'Alta'}],
+  'Nitrógeno Foliar':[{color:'#e8f5e9',label:'Deficiente'},{color:'#66bb6a',label:'Normal'},{color:'#1b5e20',label:'Óptimo'}]
+};
+
+const AMB_CONFIG={
+  'Temperatura':{rangos:[{label:'24h',days:1},{label:'7 días',days:7},{label:'15 días',days:15}],tipo:'line',lineas:[{y:20,color:'rgba(255,152,0,0.5)',dash:[4,3],label:'20°C'},{y:23,color:'rgba(76,175,80,0.5)',dash:[4,3],label:'23°C'},{y:24,color:'rgba(76,175,80,0.5)',dash:[4,3],label:'24°C'},{y:30,color:'rgba(211,47,47,0.5)',dash:[4,3],label:'30°C'}],info:'🟢 Óptimo: 23–24°C | 🟡 Aceptable: 20–30°C | 🔴 Alerta: <20° o >30°C'},
+  'Humedad':{rangos:[{label:'24h',days:1},{label:'7 días',days:7},{label:'15 días',days:15}],tipo:'line',lineas:[{y:40,color:'rgba(255,152,0,0.5)',dash:[4,3],label:'40%'},{y:60,color:'rgba(76,175,80,0.5)',dash:[4,3],label:'60%'},{y:80,color:'rgba(76,175,80,0.5)',dash:[4,3],label:'80%'},{y:90,color:'rgba(211,47,47,0.5)',dash:[4,3],label:'90%'}],info:'🟢 Óptimo: 60–80% | 🟡 Aceptable: 40–90% | 🔴 Alerta: <40% o >90%'},
+  'Precipitaciones':{rangos:[{label:'Día',days:1},{label:'7 días',days:7}],tipo:'bar',lineas:[],info:'Precipitación por intervalo de 10 min'},
+  'Radiación':{rangos:[{label:'24h',days:1},{label:'7 días',days:7},{label:'15 días',days:15}],tipo:'line',lineas:[{y:400,color:'rgba(76,175,80,0.5)',dash:[4,3],label:'400 W/m²'},{y:800,color:'rgba(211,47,47,0.5)',dash:[4,3],label:'800 W/m²'}],info:'🟢 Óptimo: ~400 W/m² | 🔴 Alta: >800 W/m²'}
+};
+
+function ndviInfo(v){
+  if(v>0.75)return{color:'#1a9641',bg:'#1a9641',label:'Muy alto'};
+  if(v>0.55)return{color:'#7cb342',bg:'#c4e687',label:'Medio'};
+  if(v>0.20)return{color:'#e65100',bg:'#fec981',label:'Bajo'};
+  return{color:'#999',bg:'#ffffff',label:'Muy bajo'};
+}
+
+let capaActiva='Vigorosidad del cultivo';
+let parcelasData=[], ndviPorGid={};
+let vigSeleccionadas={};
+let chartAmb=null, ambActivo=null;
+
+const map=new maplibregl.Map({
+  container:'map',
+  style:{version:8,sources:{'sat':{type:'raster',tiles:['https://mt0.google.com/vt/lyrs=y&x={x}&y={y}&z={z}','https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'],tileSize:256,attribution:'Google'}},layers:[{id:'sat',type:'raster',source:'sat'}]},
+  center:[-79.845,-6.775],zoom:14
+});
+map.dragRotate.disable();
+map.touchZoomRotate.disableRotation();
+map.addControl(new maplibregl.NavigationControl(),'bottom-right');
+
+document.getElementById('btn-toggle').onclick=()=>{
+  document.getElementById('sidebar').classList.toggle('collapsed');
+  document.getElementById('map').classList.toggle('full');
+  const collapsed=document.getElementById('sidebar').classList.contains('collapsed');
+  document.getElementById('panel-amb').style.left=collapsed?'10px':'calc(var(--sidebar-w) + 10px)';
+  setTimeout(()=>map.resize(),310);
+};
+
+function toggleSec(id){
+  const items=document.getElementById('sec-'+id);
+  const arrow=document.getElementById('arrow-'+id);
+  const collapsed=items.classList.toggle('collapsed');
+  arrow.textContent=collapsed?'▶':'▼';
+}
+
+function renderVigSeleccionadas(){
+  const keys=Object.keys(vigSeleccionadas);
+  if(keys.length===0){
+    document.getElementById('vig-rows').innerHTML='<div id="vig-hint">👆 Haz clic en una parcela para ver su vigorosidad</div>';
+    return;
+  }
+  document.getElementById('vig-rows').innerHTML=keys.map(gid=>{
+    const d=vigSeleccionadas[gid];
+    const inf=ndviInfo(d.ndvi);
+    return `<div class="vig-row">
+      <div class="vig-dot" style="background:${inf.bg}"></div>
+      <div class="vig-lote">${d.lote}</div>
+      <div class="vig-prod">${d.productor}</div>
+      <div class="vig-ndvi" style="color:${inf.color}">${d.ndvi.toFixed(3)}<span class="vig-tag" style="background:${inf.color}">${inf.label}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function limpiarVig(){
+  vigSeleccionadas={};
+  renderVigSeleccionadas();
+}
+
+async function agregarCapas(){
+  ['pc','pwms','ndvi','altura','ndvi-fill','ndvi-fill-border'].forEach(id=>{if(map.getLayer(id))map.removeLayer(id);});
+  ['pgeo','pwms','ndvi','altura','ndvi-parcelas'].forEach(id=>{if(map.getSource(id))map.removeSource(id);});
+
+  map.addSource('ndvi',{type:'raster',tiles:['/wms-proxy?SERVICE=WMS&REQUEST=GetMap&LAYERS=mango:ndvi_recortado&STYLES=vigorosidad&FORMAT=image/png&TRANSPARENT=true&SRS=EPSG:3857&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}'],tileSize:256});
+  map.addLayer({id:'ndvi',type:'raster',source:'ndvi',paint:{'raster-opacity':0.85}});
+
+  map.addSource('altura',{type:'raster',tiles:['/wms-proxy?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=mango:altura_recortado&STYLES=altura_plantas&FORMAT=image/png&TRANSPARENT=true&SRS=EPSG:3857&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}'],tileSize:256});
+  map.addLayer({id:'altura',type:'raster',source:'altura',layout:{visibility:'none'},paint:{'raster-opacity':0.85}});
+
+  const rNdvi=await fetch('/api/mango/ndvi-parcelas');
+  const dataNdvi=await rNdvi.json();
+  // Guardar NDVI por gid para consultar al clic
+  (dataNdvi.features||[]).forEach(f=>{
+    ndviPorGid[f.properties.gid]=parseFloat(f.properties.ndvi)||0;
+  });
+
+  map.addSource('ndvi-parcelas',{type:'geojson',data:dataNdvi});
+  map.addLayer({id:'ndvi-fill',type:'fill',source:'ndvi-parcelas',layout:{visibility:'none'},paint:{'fill-color':['step',['get','ndvi'],'#ffffff',0.20,'#fec981',0.55,'#c4e687',0.75,'#1a9641'],'fill-opacity':0.85}});
+  map.addLayer({id:'ndvi-fill-border',type:'line',source:'ndvi-parcelas',layout:{visibility:'none'},paint:{'line-color':'#ffffff','line-width':1.5}});
+
+  map.addSource('pwms',{type:'raster',tiles:['/wms-proxy?SERVICE=WMS&REQUEST=GetMap&LAYERS=mango:parcelas_mango&STYLES=&FORMAT=image/png&TRANSPARENT=true&SRS=EPSG:3857&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}'],tileSize:256});
+  map.addLayer({id:'pwms',type:'raster',source:'pwms',paint:{'raster-opacity':0.9}});
+
+  if(parcelasData.length===0){
+    const r=await fetch('/api/mango/parcelas');
+    const data=await r.json();
+    parcelasData=data.features||[];
+  }
+  map.addSource('pgeo',{type:'geojson',data:{type:'FeatureCollection',features:parcelasData}});
+  map.addLayer({id:'pc',type:'fill',source:'pgeo',paint:{'fill-color':'#000','fill-opacity':0}});
+}
+
+map.on('load',async()=>{
+  await agregarCapas();
+  const b=new maplibregl.LngLatBounds();
+  parcelasData.forEach(f=>{
+    if(!f.geometry?.coordinates)return;
+    if(f.geometry.type==='Polygon')f.geometry.coordinates[0].forEach(c=>{if(c?.length===2)b.extend(c);});
+    if(f.geometry.type==='MultiPolygon')f.geometry.coordinates.forEach(p=>p[0].forEach(c=>{if(c?.length===2)b.extend(c);}));
+  });
+  if(!b.isEmpty())map.fitBounds(b,{padding:60});
+});
+
+map.on('click','pc',async e=>{
+  const p=e.features[0].properties;
+  const lng=e.lngLat.lng, lat=e.lngLat.lat;
+  const gid=p.gid;
+
+  // Popup base siempre
+  const extra=`
+    <div><b>Productor:</b> ${p.productor_nombre||'—'}</div>
+    <div><b>DNI:</b> ${p.productor_dni||'—'}</div>
+    <div><b>Variedad:</b> ${p.variedad||'—'}</div>
+    <div><b>Zona:</b> ${p.zona||'—'}</div>
+    <div><b>N° Plantas:</b> ${p.numero_plantas||'—'}</div>
+  `;
+
+  let ndviHtml='';
+
+  if(capaActiva==='Vigorosidad del cultivo'){
+    // Obtener NDVI y agregar a tabla
+    let ndvi=ndviPorGid[gid]||0;
+    try{
+      const params=new URLSearchParams({SERVICE:'WMS',VERSION:'1.1.1',REQUEST:'GetFeatureInfo',LAYERS:'mango:ndvi_recortado',QUERY_LAYERS:'mango:ndvi_recortado',INFO_FORMAT:'application/json',SRS:'EPSG:4326',BBOX:`${lng-0.0001},${lat-0.0001},${lng+0.0001},${lat+0.0001}`,WIDTH:101,HEIGHT:101,X:50,Y:50});
+      const res=await fetch(`/wms-feature-info?${params}`);
+      const data=await res.json();
+      if(data.features?.length>0) ndvi=parseFloat(data.features[0].properties.GRAY_INDEX||ndvi);
+    }catch(e){}
+
+    const inf=ndviInfo(ndvi);
+    let etiq='<span style="color:#d32f2f">● Malo</span>';
+    if(ndvi>0.75)etiq='<span style="color:#1b5e20">● Muy bueno</span>';
+    else if(ndvi>0.6)etiq='<span style="color:#4caf50">● Bueno</span>';
+    else if(ndvi>0.4)etiq='<span style="color:#ff8f00">● Regular</span>';
+    ndviHtml=`<div class="pndvi">🌿 NDVI: <strong>${ndvi.toFixed(3)}</strong> ${etiq}</div>`;
+
+    // Agregar a tabla vigorosidad general
+    vigSeleccionadas[gid]={
+      lote: p.lote||p.nombre||`P${gid}`,
+      productor: p.productor_nombre||'—',
+      ndvi: ndvi
+    };
+    renderVigSeleccionadas();
+  }
+
+  new maplibregl.Popup({maxWidth:'280px'}).setLngLat([lng,lat]).setHTML(`
+    <div class="ph">🥭 ${p.nombre||p.lote||'Parcela'}</div>
+    <div class="pb">
+      <div><b>Área:</b> ${p.area_poly_ha?p.area_poly_ha+' ha':'—'}</div>
+      ${extra}
+      ${ndviHtml}
+    </div>`).addTo(map);
+});
+
+map.on('mouseenter','pc',()=>map.getCanvas().style.cursor='pointer');
+map.on('mouseleave','pc',()=>map.getCanvas().style.cursor='');
+
+function activarCapa(el){
+  document.querySelectorAll('.pitem').forEach(i=>i.classList.remove('active','act-amb'));
+  cerrarAmb();
+  el.classList.add('active');
+  capaActiva=el.dataset.nombre;
+
+  if(capaActiva==='Vigorosidad del cultivo'){
+    if(map.getLayer('ndvi'))map.setLayoutProperty('ndvi','visibility','visible');
+    if(map.getLayer('altura'))map.setLayoutProperty('altura','visibility','none');
+    if(map.getLayer('ndvi-fill'))map.setLayoutProperty('ndvi-fill','visibility','none');
+    if(map.getLayer('ndvi-fill-border'))map.setLayoutProperty('ndvi-fill-border','visibility','none');
+    document.getElementById('vig-general').classList.add('show');
+  } else if(capaActiva==='Altura de planta'){
+    if(map.getLayer('ndvi'))map.setLayoutProperty('ndvi','visibility','none');
+    if(map.getLayer('altura'))map.setLayoutProperty('altura','visibility','visible');
+    if(map.getLayer('ndvi-fill'))map.setLayoutProperty('ndvi-fill','visibility','none');
+    if(map.getLayer('ndvi-fill-border'))map.setLayoutProperty('ndvi-fill-border','visibility','none');
+    document.getElementById('vig-general').classList.remove('show');
+  } else {
+    if(map.getLayer('ndvi'))map.setLayoutProperty('ndvi','visibility','visible');
+    if(map.getLayer('altura'))map.setLayoutProperty('altura','visibility','none');
+    if(map.getLayer('ndvi-fill'))map.setLayoutProperty('ndvi-fill','visibility','none');
+    if(map.getLayer('ndvi-fill-border'))map.setLayoutProperty('ndvi-fill-border','visibility','none');
+    document.getElementById('vig-general').classList.remove('show');
+  }
+
+  if(map.getLayer('pwms'))map.moveLayer('pwms');
+  if(map.getLayer('pc'))map.moveLayer('pc');
+  mostrarLeyenda(capaActiva);
+}
+
+function mostrarLeyenda(nombre){
+  const box=document.getElementById('leyenda'),data=LEYENDAS[nombre];
+  if(!data){box.classList.remove('show');return;}
+  box.classList.add('show');
+  document.getElementById('ley-title').textContent=nombre;
+  document.getElementById('ley-items').innerHTML=data.map(d=>`<div class="li"><div class="lc" style="background:${d.color};${d.color==='#ffffff'?'border:1px solid #ccc':''}"></div><span>${d.label}</span></div>`).join('');
+}
+
+async function activarAmb(el){
+  document.querySelectorAll('.pitem').forEach(i=>i.classList.remove('active','act-amb'));
+  el.classList.add('act-amb');
+  ambActivo={nombre:el.dataset.nombre,field:el.dataset.field,color:el.dataset.color,unit:el.dataset.unit};
+  document.getElementById('pa-titulo').textContent=ambActivo.nombre;
+  document.getElementById('panel-amb').classList.add('show');
+  const cfg=AMB_CONFIG[ambActivo.nombre];
+  document.getElementById('rango-selector').innerHTML=cfg.rangos.map((r,i)=>`<button class="rango-btn${i===0?' active':''}" data-idx="${i}" onclick="cambiarRango(this)">${r.label}</button>`).join('');
+  await cargarGrafica(cfg.rangos[0].days);
+}
+
+async function cargarGrafica(days){
+  document.getElementById('pa-loading').style.display='block';
+  document.getElementById('pa-canvas-wrap').style.display='none';
+  document.getElementById('umbrales-info').style.display='none';
+  document.getElementById('pa-loading').innerHTML='⏳ Cargando...';
+  try{
+    const url=`/thingspeak-proxy?channel=${THINGSPEAK_CHANNEL}&field=${ambActivo.field}&api_key=${THINGSPEAK_API_KEY}&days=${days}`;
+    const res=await fetch(url);
+    const json=await res.json();
+    if(!json.feeds)throw new Error('Sin datos');
+    const cfg=AMB_CONFIG[ambActivo.nombre];
+    const feeds=json.feeds.filter(f=>f[ambActivo.field]!==null&&f[ambActivo.field]!==''&&!isNaN(parseFloat(f[ambActivo.field])));
+    const labels=feeds.map(f=>toLima(new Date(f.created_at)));
+    const values=feeds.map(f=>parseFloat(f[ambActivo.field]));
+    document.getElementById('pa-loading').style.display='none';
+    document.getElementById('pa-canvas-wrap').style.display='block';
+    if(chartAmb){chartAmb.destroy();chartAmb=null;}
+    const ctx=document.getElementById('pa-canvas').getContext('2d');
+    const lineasPlugin={id:'lineasRef',afterDraw(chart){
+      const{ctx:c,scales:{y},chartArea}=chart;
+      cfg.lineas.forEach(l=>{
+        if(l.y<y.min||l.y>y.max)return;
+        const yp=y.getPixelForValue(l.y);
+        c.save();c.beginPath();c.moveTo(chartArea.left,yp);c.lineTo(chartArea.right,yp);
+        c.strokeStyle=l.color;c.lineWidth=1;c.setLineDash(l.dash);c.stroke();
+        c.setLineDash([]);c.fillStyle='rgba(80,80,80,0.65)';c.font='9px Inter';c.textAlign='right';
+        c.fillText(l.label,chartArea.right-2,yp-2);c.restore();
+      });
+    }};
+    const dataset=cfg.tipo==='bar'?
+      {label:`${ambActivo.nombre} (${ambActivo.unit})`,data:values,backgroundColor:ambActivo.color+'99',borderColor:ambActivo.color,borderWidth:1}:
+      {label:`${ambActivo.nombre} (${ambActivo.unit})`,data:values,borderColor:ambActivo.color,backgroundColor:ambActivo.color+'22',borderWidth:1.5,pointRadius:values.length>200?0:2,tension:0.3,fill:true,spanGaps:true};
+    chartAmb=new Chart(ctx,{
+      type:cfg.tipo,data:{labels,datasets:[dataset]},plugins:[lineasPlugin],
+      options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.y.toFixed(2)} ${ambActivo.unit}`}}},
+        scales:{
+          x:{type:'time',time:{tooltipFormat:'dd/MM HH:mm',displayFormats:{hour:'HH:mm',day:'dd/MM'}},ticks:{maxTicksLimit:5,font:{size:9}},grid:{display:false}},
+          y:{ticks:{font:{size:9},callback:v=>parseFloat(v.toFixed(1))+' '+ambActivo.unit},grid:{color:'rgba(0,0,0,0.04)'}}
+        }
+      }
+    });
+    if(cfg.info){document.getElementById('umbrales-info').style.display='block';document.getElementById('umbrales-info').innerHTML=cfg.info;}
+  }catch(err){
+    document.getElementById('pa-loading').innerHTML='⚠️ Error al cargar datos';
+    console.error(err);
+  }
+}
+
+function cambiarRango(btn){
+  document.querySelectorAll('.rango-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  cargarGrafica(AMB_CONFIG[ambActivo.nombre].rangos[parseInt(btn.dataset.idx)].days);
+}
+
+function cerrarAmb(){
+  document.getElementById('panel-amb').classList.remove('show');
+  document.querySelectorAll('.pitem').forEach(i=>i.classList.remove('act-amb'));
+  ambActivo=null;
+}
+
+document.getElementById('input-dni').addEventListener('input',async function(){
+  const dni=this.value.trim(),res=document.getElementById('dni-res');
+  if(dni.length<8){res.textContent='';return;}
+  try{
+    const r=await fetch(`/api/mango/parcelas-por-dni?dni=${dni}`);
+    const data=await r.json();
+    if(!data?.features?.length){res.textContent='⚠️ No se encontraron parcelas';res.style.color='#e53935';return;}
+    res.textContent=`✅ ${data.features[0].properties.productor_nombre} — ${data.features.length} parcela(s)`;
+    res.style.color='#2e7d32';
+    const b=new maplibregl.LngLatBounds();
+    data.features.forEach(f=>{
+      if(f.geometry.type==='Polygon')f.geometry.coordinates[0].forEach(c=>b.extend(c));
+      if(f.geometry.type==='MultiPolygon')f.geometry.coordinates.forEach(p=>p[0].forEach(c=>b.extend(c)));
+    });
+    if(!b.isEmpty())map.fitBounds(b,{padding:80});
+  }catch(e){res.textContent='⚠️ Error en la búsqueda';res.style.color='#e53935';}
+});
+</script>
+</body>
+</html>
