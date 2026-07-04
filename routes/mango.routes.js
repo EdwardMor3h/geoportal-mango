@@ -128,3 +128,34 @@ router.get('/arboles-yolo', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// Predicciones de rendimiento
+router.get('/predicciones', async (req, res) => {
+    try {
+        const result = await sequelize.query(
+            `SELECT json_build_object(
+                'type', 'FeatureCollection',
+                'features', json_agg(json_build_object(
+                    'type', 'Feature',
+                    'geometry', ST_AsGeoJSON(ST_Transform(pm.geom, 4326))::json,
+                    'properties', json_build_object(
+                        'parcela_gid', pr.parcela_gid,
+                        'lote', pr.lote,
+                        'area_ha', pr.area_ha,
+                        'rendimiento_predicho_kg', pr.rendimiento_predicho_kg,
+                        'rendimiento_predicho_t_ha', pr.rendimiento_predicho_t_ha,
+                        'r2_modelo', pr.r2_modelo,
+                        'mae_modelo', pr.mae_modelo,
+                        'rmse_modelo', pr.rmse_modelo
+                    )
+                ))
+            ) AS geojson
+            FROM prediccion_rendimiento pr
+            JOIN parcelas_mango pm ON pm.gid = pr.parcela_gid`,
+            { type: QueryTypes.SELECT }
+        );
+        res.json(result[0].geojson);
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
