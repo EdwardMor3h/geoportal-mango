@@ -20,6 +20,13 @@ body{font-family:'Inter',sans-serif;overflow:hidden}
 #header .user strong{color:#fff}
 #btn-toggle{background:rgba(255,255,255,0.15);color:#fff;border:none;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0}
 #btn-toggle:hover{background:rgba(255,255,255,0.25)}
+
+#gs-badge{display:flex;align-items:center;gap:5px;font-size:10px;color:rgba(255,255,255,.6);padding:3px 9px;border-radius:7px;border:1px solid rgba(255,255,255,.15);font-family:'Montserrat',sans-serif;font-weight:600;flex-shrink:0;}
+#gs-dot{width:7px;height:7px;border-radius:50%;background:#bbb;flex-shrink:0;transition:background .3s;}
+#gs-dot.ok{background:#4caf50;box-shadow:0 0 5px rgba(76,175,80,.7);}
+#gs-dot.warn{background:#f57c00;box-shadow:0 0 5px rgba(245,124,0,.7);}
+#gs-dot.off{background:#ef5350;}
+
 #sidebar{position:fixed;top:var(--header-h);left:0;width:var(--sidebar-w);height:calc(100vh - var(--header-h));background:#fff;z-index:1400;box-shadow:2px 0 16px rgba(0,0,0,.12);display:flex;flex-direction:column;transition:transform .3s cubic-bezier(.4,0,.2,1);overflow:hidden}
 #sidebar.collapsed{transform:translateX(calc(-1 * var(--sidebar-w)))}
 #buscar-sec{padding:16px;background:var(--verde-light);border-bottom:1px solid #c8e6c9}
@@ -50,7 +57,13 @@ body{font-family:'Inter',sans-serif;overflow:hidden}
 #ley-title{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;color:#333;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
 .li{display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:11px;color:#555}
 .lc{width:16px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.1);flex-shrink:0}
-/* VIGOROSIDAD GENERAL */
+
+#punto-row{margin:0 16px 8px;padding:8px 12px;background:#f5faf2;border:1px solid #c5e1a5;border-radius:var(--radius);display:none;align-items:center;justify-content:space-between}
+#punto-row.show{display:flex}
+#punto-lbl{font-size:11px;color:#4a5f4a}
+#punto-num{font-family:'Montserrat',sans-serif;font-size:15px;font-weight:800}
+#punto-pill{font-size:9px;padding:2px 7px;border-radius:6px;color:#fff;font-weight:600;margin-left:5px}
+
 #vig-general{margin:6px 16px 8px;background:#f1f8e9;border:1px solid #c5e1a5;border-radius:var(--radius);padding:8px 12px;display:none}
 #vig-general.show{display:block}
 #vig-gen-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
@@ -65,6 +78,7 @@ body{font-family:'Inter',sans-serif;overflow:hidden}
 .vig-prod{flex:1;color:#666;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vig-ndvi{font-size:10px;font-weight:600;text-align:right;white-space:nowrap}
 .vig-tag{font-size:9px;padding:1px 5px;border-radius:8px;color:#fff;margin-left:3px}
+
 #map{position:fixed;top:var(--header-h);left:var(--sidebar-w);right:0;bottom:0;transition:left .3s cubic-bezier(.4,0,.2,1)}
 #map.full{left:0}
 .maplibregl-popup-content{border-radius:12px!important;padding:0!important;box-shadow:0 4px 20px rgba(0,0,0,.18)!important;min-width:220px;overflow:hidden}
@@ -83,6 +97,10 @@ body{font-family:'Inter',sans-serif;overflow:hidden}
 #umbrales-info{font-size:10px;color:#888;text-align:center;margin-top:5px;padding:4px 6px;background:#fafafa;border-radius:6px}
 #pa-loading{text-align:center;padding:20px;color:#aaa;font-size:12px}
 #pa-canvas-wrap{position:relative;height:160px}
+
+#rgb-toggle{position:fixed;bottom:20px;left:calc(var(--sidebar-w) + 10px);z-index:1300;background:#fff;border:2px solid #fff;border-radius:10px;padding:8px 14px;box-shadow:var(--shadow);cursor:pointer;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;color:#333;display:flex;align-items:center;gap:6px;transition:left .3s cubic-bezier(.4,0,.2,1)}
+#rgb-toggle:hover{background:#f5f5f5}
+#rgb-toggle.active{background:var(--verde);color:#fff;border-color:var(--verde)}
 </style>
 </head>
 <body>
@@ -95,6 +113,18 @@ window.MAPBOX_TOKEN = '<%= mapboxToken %>';
   <button id="btn-toggle" title="Mostrar/ocultar panel">☰</button>
   <span class="icon">🥭</span>
   <div class="logo">Geoportal de Monitoreo<span>Sistema de análisis agrícola — Mango</span></div>
+
+  <div id="gs-badge">
+    <div id="gs-dot"></div>
+    <span id="gs-txt">GeoServer</span>
+  </div>
+
+  <nav style="display:flex;gap:2px;margin-left:8px;">
+    <a href="/dashboard" style="color:rgba(255,255,255,.6);text-decoration:none;font-size:11px;font-weight:500;padding:5px 10px;border-radius:7px;transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,.1)';this.style.color='#fff'" onmouseout="this.style.background='';this.style.color='rgba(255,255,255,.6)'">📊 Dashboard</a>
+    <a href="/mapa-mango" style="color:#fff;text-decoration:none;font-size:11px;font-weight:700;padding:5px 10px;border-radius:7px;background:rgba(255,255,255,.2);">🗺️ Mapa</a>
+    <a href="/productores" style="color:rgba(255,255,255,.6);text-decoration:none;font-size:11px;font-weight:500;padding:5px 10px;border-radius:7px;transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,.1)';this.style.color='#fff'" onmouseout="this.style.background='';this.style.color='rgba(255,255,255,.6)'">👨‍🌾 Productores</a>
+    <a href="/reportes" style="color:rgba(255,255,255,.6);text-decoration:none;font-size:11px;font-weight:500;padding:5px 10px;border-radius:7px;transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,.1)';this.style.color='#fff'" onmouseout="this.style.background='';this.style.color='rgba(255,255,255,.6)'">📄 Reportes</a>
+  </nav>
   <div class="user">👤 <strong><%= locals.user ? locals.user.nombre || locals.user.usuario : 'Usuario' %></strong></div>
 </div>
 
@@ -116,10 +146,10 @@ window.MAPBOX_TOKEN = '<%= mapboxToken %>';
         <div class="pitem" data-nombre="Actividad Fotosintética" onclick="activarCapa(this)"><div class="pdot"></div><span class="plabel">Actividad Fotosintética</span></div>
         <div class="pitem" data-nombre="Concentración de Clorofila" onclick="activarCapa(this)"><div class="pdot"></div><span class="plabel">Concentración de Clorofila</span></div>
         <div class="pitem" data-nombre="Nitrógeno Foliar" onclick="activarCapa(this)"><div class="pdot"></div><span class="plabel">Nitrógeno Foliar</span></div>
+        <div class="pitem" data-nombre="Árboles Detectados (IA)" onclick="activarCapa(this)"><div class="pdot"></div><span class="plabel">🌳 Árboles Detectados (IA)</span></div>
       </div>
     </div>
 
-    <!-- LEYENDA -->
     <div id="leyenda" class="show">
       <div id="ley-title">Vigorosidad del cultivo</div>
       <div id="ley-items">
@@ -130,7 +160,11 @@ window.MAPBOX_TOKEN = '<%= mapboxToken %>';
       </div>
     </div>
 
-    <!-- VIGOROSIDAD GENERAL -->
+    <div id="punto-row">
+      <span id="punto-lbl">🌿 NDVI del punto</span>
+      <span><span id="punto-num">—</span><span id="punto-pill"></span></span>
+    </div>
+
     <div id="vig-general" class="show">
       <div id="vig-gen-header">
         <div id="vig-gen-title">🌿 Vigorosidad General</div>
@@ -168,10 +202,10 @@ window.MAPBOX_TOKEN = '<%= mapboxToken %>';
     <div id="umbrales-info" style="display:none"></div>
   </div>
 </div>
-
+<button id="rgb-toggle" onclick="toggleRGB()">📷 Ver imagen RGB (UAV)</button>
 <script>
-const THINGSPEAK_CHANNEL='3255217';
-const THINGSPEAK_API_KEY='QI1XODVEJBWJ82R0';
+const THINGSPEAK_CHANNEL='3010530';
+const THINGSPEAK_API_KEY='T5KKTEXWHCUX5P0J';
 const LIMA_OFFSET=-5*60*60*1000;
 function toLima(d){return new Date(d.getTime()+LIMA_OFFSET);}
 
@@ -183,6 +217,28 @@ const LEYENDAS={
   'Nitrógeno Foliar':[{color:'#e8f5e9',label:'Deficiente'},{color:'#66bb6a',label:'Normal'},{color:'#1b5e20',label:'Óptimo'}]
 };
 
+const INDICE_MAP={
+  'Vigorosidad del cultivo':{layer:'mango:ndvi_recortado',estilo:'vigorosidad',emoji:'🌿',label:'NDVI del punto',unidad:''},
+  'Altura de planta':{layer:'mango:altura_recortado',estilo:'altura_plantas',emoji:'📏',label:'Altura del punto',unidad:'m'}
+};
+
+function clasificarValor(v, nombreIndice){
+  switch(nombreIndice){
+    case 'Altura de planta':
+      if(v>8) return{color:'#d32f2f',bg:'#d32f2f',label:'Muy alto'};
+      if(v>4) return{color:'#2e7d32',bg:'#2e7d32',label:'Alto'};
+      if(v>2) return{color:'#827717',bg:'#c8e639',label:'Medio'};
+      return{color:'#999',bg:'#969696',label:'Bajo'};
+    case 'Vigorosidad del cultivo':
+    default:
+      if(v>0.75) return{color:'#1b5e20',bg:'#1a9641',label:'Alto'};
+      if(v>0.55) return{color:'#7cb342',bg:'#c4e687',label:'Medio'};
+      if(v>0.20) return{color:'#e65100',bg:'#fec981',label:'Bajo'};
+      return{color:'#999',bg:'#ffffff',label:'Muy bajo'};
+  }
+}
+function ndviInfo(v){ return clasificarValor(v,'Vigorosidad del cultivo'); }
+
 const AMB_CONFIG={
   'Temperatura':{rangos:[{label:'24h',days:1},{label:'7 días',days:7},{label:'15 días',days:15}],tipo:'line',lineas:[{y:20,color:'rgba(255,152,0,0.5)',dash:[4,3],label:'20°C'},{y:23,color:'rgba(76,175,80,0.5)',dash:[4,3],label:'23°C'},{y:24,color:'rgba(76,175,80,0.5)',dash:[4,3],label:'24°C'},{y:30,color:'rgba(211,47,47,0.5)',dash:[4,3],label:'30°C'}],info:'🟢 Óptimo: 23–24°C | 🟡 Aceptable: 20–30°C | 🔴 Alerta: <20° o >30°C'},
   'Humedad':{rangos:[{label:'24h',days:1},{label:'7 días',days:7},{label:'15 días',days:15}],tipo:'line',lineas:[{y:40,color:'rgba(255,152,0,0.5)',dash:[4,3],label:'40%'},{y:60,color:'rgba(76,175,80,0.5)',dash:[4,3],label:'60%'},{y:80,color:'rgba(76,175,80,0.5)',dash:[4,3],label:'80%'},{y:90,color:'rgba(211,47,47,0.5)',dash:[4,3],label:'90%'}],info:'🟢 Óptimo: 60–80% | 🟡 Aceptable: 40–90% | 🔴 Alerta: <40% o >90%'},
@@ -190,17 +246,23 @@ const AMB_CONFIG={
   'Radiación':{rangos:[{label:'24h',days:1},{label:'7 días',days:7},{label:'15 días',days:15}],tipo:'line',lineas:[{y:400,color:'rgba(76,175,80,0.5)',dash:[4,3],label:'400 W/m²'},{y:800,color:'rgba(211,47,47,0.5)',dash:[4,3],label:'800 W/m²'}],info:'🟢 Óptimo: ~400 W/m² | 🔴 Alta: >800 W/m²'}
 };
 
-function ndviInfo(v){
-  if(v>0.75)return{color:'#1a9641',bg:'#1a9641',label:'Muy alto'};
-  if(v>0.55)return{color:'#7cb342',bg:'#c4e687',label:'Medio'};
-  if(v>0.20)return{color:'#e65100',bg:'#fec981',label:'Bajo'};
-  return{color:'#999',bg:'#ffffff',label:'Muy bajo'};
-}
-
 let capaActiva='Vigorosidad del cultivo';
 let parcelasData=[], ndviPorGid={};
 let vigSeleccionadas={};
 let chartAmb=null, ambActivo=null;
+let ultimoClick={lng:0,lat:0};
+
+async function verificarGeoServer(){
+  const dot=document.getElementById('gs-dot');
+  const txt=document.getElementById('gs-txt');
+  try{
+    const r=await fetch('/geoserver-capas',{signal:AbortSignal.timeout(4000)});
+    if(r.ok){dot.className='ok';txt.textContent='GeoServer ✓';}
+    else{dot.className='warn';txt.textContent='GeoServer ⚠';}
+  }catch(e){dot.className='off';txt.textContent='GeoServer ✗';}
+}
+verificarGeoServer();
+setInterval(verificarGeoServer,60000);
 
 const map=new maplibregl.Map({
   container:'map',
@@ -216,6 +278,7 @@ document.getElementById('btn-toggle').onclick=()=>{
   document.getElementById('map').classList.toggle('full');
   const collapsed=document.getElementById('sidebar').classList.contains('collapsed');
   document.getElementById('panel-amb').style.left=collapsed?'10px':'calc(var(--sidebar-w) + 10px)';
+  document.getElementById('rgb-toggle').style.left=collapsed?'10px':'calc(var(--sidebar-w) + 10px)';
   setTimeout(()=>map.resize(),310);
 };
 
@@ -234,12 +297,12 @@ function renderVigSeleccionadas(){
   }
   document.getElementById('vig-rows').innerHTML=keys.map(gid=>{
     const d=vigSeleccionadas[gid];
-    const inf=ndviInfo(d.ndvi);
+    const inf=clasificarValor(d.ndvi, d.indice||capaActiva);
     return `<div class="vig-row">
       <div class="vig-dot" style="background:${inf.bg}"></div>
       <div class="vig-lote">${d.lote}</div>
       <div class="vig-prod">${d.productor}</div>
-      <div class="vig-ndvi" style="color:${inf.color}">${d.ndvi.toFixed(3)}<span class="vig-tag" style="background:${inf.color}">${inf.label}</span></div>
+      <div class="vig-ndvi" style="color:${inf.color}">${d.ndvi.toFixed(3)}<span class="vig-tag" style="background:${inf.bg}">${inf.label}</span></div>
     </div>`;
   }).join('');
 }
@@ -250,8 +313,8 @@ function limpiarVig(){
 }
 
 async function agregarCapas(){
-  ['pc','pwms','ndvi','altura','ndvi-fill','ndvi-fill-border'].forEach(id=>{if(map.getLayer(id))map.removeLayer(id);});
-  ['pgeo','pwms','ndvi','altura','ndvi-parcelas'].forEach(id=>{if(map.getSource(id))map.removeSource(id);});
+  ['pc','pwms','ndvi','altura','ndvi-fill','ndvi-fill-border','arboles-yolo'].forEach(id=>{if(map.getLayer(id))map.removeLayer(id);});
+  ['pgeo','pwms','ndvi','altura','ndvi-parcelas','arboles-yolo'].forEach(id=>{if(map.getSource(id))map.removeSource(id);});
 
   map.addSource('ndvi',{type:'raster',tiles:['/wms-proxy?SERVICE=WMS&REQUEST=GetMap&LAYERS=mango:ndvi_recortado&STYLES=vigorosidad&FORMAT=image/png&TRANSPARENT=true&SRS=EPSG:3857&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}'],tileSize:256});
   map.addLayer({id:'ndvi',type:'raster',source:'ndvi',paint:{'raster-opacity':0.85}});
@@ -261,7 +324,6 @@ async function agregarCapas(){
 
   const rNdvi=await fetch('/api/mango/ndvi-parcelas');
   const dataNdvi=await rNdvi.json();
-  // Guardar NDVI por gid para consultar al clic
   (dataNdvi.features||[]).forEach(f=>{
     ndviPorGid[f.properties.gid]=parseFloat(f.properties.ndvi)||0;
   });
@@ -269,6 +331,21 @@ async function agregarCapas(){
   map.addSource('ndvi-parcelas',{type:'geojson',data:dataNdvi});
   map.addLayer({id:'ndvi-fill',type:'fill',source:'ndvi-parcelas',layout:{visibility:'none'},paint:{'fill-color':['step',['get','ndvi'],'#ffffff',0.20,'#fec981',0.55,'#c4e687',0.75,'#1a9641'],'fill-opacity':0.85}});
   map.addLayer({id:'ndvi-fill-border',type:'line',source:'ndvi-parcelas',layout:{visibility:'none'},paint:{'line-color':'#ffffff','line-width':1.5}});
+
+  try{
+    const rArboles=await fetch('/api/mango/arboles-yolo');
+    const dataArboles=await rArboles.json();
+    map.addSource('arboles-yolo',{type:'geojson',data:dataArboles});
+    map.addLayer({
+      id:'arboles-yolo',type:'circle',source:'arboles-yolo',
+      layout:{visibility:'none'},
+      paint:{
+        'circle-radius':4,
+        'circle-color':['interpolate',['linear'],['get','ndvi'],0.2,'#d32f2f',0.55,'#fbc02d',0.85,'#2e7d32'],
+        'circle-stroke-width':1,'circle-stroke-color':'#fff'
+      }
+    });
+  }catch(e){}
 
   map.addSource('pwms',{type:'raster',tiles:['/wms-proxy?SERVICE=WMS&REQUEST=GetMap&LAYERS=mango:parcelas_mango&STYLES=&FORMAT=image/png&TRANSPARENT=true&SRS=EPSG:3857&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}'],tileSize:256});
   map.addLayer({id:'pwms',type:'raster',source:'pwms',paint:{'raster-opacity':0.9}});
@@ -293,12 +370,70 @@ map.on('load',async()=>{
   if(!b.isEmpty())map.fitBounds(b,{padding:60});
 });
 
+async function consultarPuntoActivo(lng,lat,nombreIndice){
+  const cfg=INDICE_MAP[nombreIndice];
+  document.getElementById('punto-row').classList.remove('show');
+  if(!cfg)return;
+
+  try{
+    const params=new URLSearchParams({
+      SERVICE:'WMS',VERSION:'1.1.1',REQUEST:'GetFeatureInfo',
+      LAYERS:cfg.layer,QUERY_LAYERS:cfg.layer,
+      INFO_FORMAT:'application/json',SRS:'EPSG:4326',
+      BBOX:`${lng-0.0001},${lat-0.0001},${lng+0.0001},${lat+0.0001}`,
+      WIDTH:101,HEIGHT:101,X:50,Y:50
+    });
+    const res=await fetch(`/wms-feature-info?${params}`);
+    const data=await res.json();
+    if(data.features?.length>0){
+      const raw=data.features[0].properties?.GRAY_INDEX;
+      if(raw!=null){
+        const val=parseFloat(raw);
+        const inf=clasificarValor(val,nombreIndice);
+        const unidad=cfg.unidad?` ${cfg.unidad}`:'';
+        document.getElementById('punto-lbl').textContent=`${cfg.emoji} ${cfg.label}`;
+        document.getElementById('punto-num').textContent=val.toFixed(3)+unidad;
+        document.getElementById('punto-num').style.color=inf.color;
+        document.getElementById('punto-pill').textContent=inf.label;
+        document.getElementById('punto-pill').style.background=inf.bg;
+        document.getElementById('punto-row').classList.add('show');
+        return val;
+      }
+    }
+  }catch(e){}
+  return null;
+}
+
+let rgbActivo=false;
+function toggleRGB(){
+  rgbActivo=!rgbActivo;
+  const btn=document.getElementById('rgb-toggle');
+  if(rgbActivo){
+    btn.classList.add('active');
+    btn.textContent='👁️ Ocultar imagen RGB';
+    if(!map.getSource('rgb-uav')){
+      map.addSource('rgb-uav',{type:'raster',tiles:['/wms-proxy?SERVICE=WMS&REQUEST=GetMap&LAYERS=mango:mango_rgb_recortado&STYLES=&FORMAT=image/png&TRANSPARENT=true&SRS=EPSG:3857&WIDTH=256&HEIGHT=256&BBOX={bbox-epsg-3857}'],tileSize:256});
+      map.addLayer({id:'rgb-uav',type:'raster',source:'rgb-uav',paint:{'raster-opacity':1}});
+    } else {
+      map.setLayoutProperty('rgb-uav','visibility','visible');
+    }
+    // Mover bordes y árboles encima del RGB
+    if(map.getLayer('pwms'))map.moveLayer('pwms');
+    if(map.getLayer('arboles-yolo'))map.moveLayer('arboles-yolo');
+    if(map.getLayer('pc'))map.moveLayer('pc');
+  } else {
+    btn.classList.remove('active');
+    btn.textContent='📷 Ver imagen RGB (UAV)';
+    if(map.getLayer('rgb-uav'))map.setLayoutProperty('rgb-uav','visibility','none');
+  }
+}
+
 map.on('click','pc',async e=>{
   const p=e.features[0].properties;
   const lng=e.lngLat.lng, lat=e.lngLat.lat;
   const gid=p.gid;
+  ultimoClick={lng,lat};
 
-  // Popup base siempre
   const extra=`
     <div><b>Productor:</b> ${p.productor_nombre||'—'}</div>
     <div><b>DNI:</b> ${p.productor_dni||'—'}</div>
@@ -308,29 +443,29 @@ map.on('click','pc',async e=>{
   `;
 
   let ndviHtml='';
+  const valorPunto=await consultarPuntoActivo(lng,lat,capaActiva);
 
   if(capaActiva==='Vigorosidad del cultivo'){
-    // Obtener NDVI y agregar a tabla
-    let ndvi=ndviPorGid[gid]||0;
-    try{
-      const params=new URLSearchParams({SERVICE:'WMS',VERSION:'1.1.1',REQUEST:'GetFeatureInfo',LAYERS:'mango:ndvi_recortado',QUERY_LAYERS:'mango:ndvi_recortado',INFO_FORMAT:'application/json',SRS:'EPSG:4326',BBOX:`${lng-0.0001},${lat-0.0001},${lng+0.0001},${lat+0.0001}`,WIDTH:101,HEIGHT:101,X:50,Y:50});
-      const res=await fetch(`/wms-feature-info?${params}`);
-      const data=await res.json();
-      if(data.features?.length>0) ndvi=parseFloat(data.features[0].properties.GRAY_INDEX||ndvi);
-    }catch(e){}
-
-    const inf=ndviInfo(ndvi);
+    let ndvi=valorPunto!=null?valorPunto:(ndviPorGid[gid]||0);
     let etiq='<span style="color:#d32f2f">● Malo</span>';
     if(ndvi>0.75)etiq='<span style="color:#1b5e20">● Muy bueno</span>';
     else if(ndvi>0.6)etiq='<span style="color:#4caf50">● Bueno</span>';
     else if(ndvi>0.4)etiq='<span style="color:#ff8f00">● Regular</span>';
     ndviHtml=`<div class="pndvi">🌿 NDVI: <strong>${ndvi.toFixed(3)}</strong> ${etiq}</div>`;
 
-    // Agregar a tabla vigorosidad general
     vigSeleccionadas[gid]={
       lote: p.lote||p.nombre||`P${gid}`,
       productor: p.productor_nombre||'—',
-      ndvi: ndvi
+      ndvi: ndvi,
+      indice: capaActiva
+    };
+    renderVigSeleccionadas();
+  } else if(INDICE_MAP[capaActiva] && valorPunto!=null){
+    vigSeleccionadas[gid]={
+      lote: p.lote||p.nombre||`P${gid}`,
+      productor: p.productor_nombre||'—',
+      ndvi: valorPunto,
+      indice: capaActiva
     };
     renderVigSeleccionadas();
   }
@@ -353,23 +488,38 @@ function activarCapa(el){
   el.classList.add('active');
   capaActiva=el.dataset.nombre;
 
+  document.getElementById('punto-row').classList.remove('show');
+
   if(capaActiva==='Vigorosidad del cultivo'){
     if(map.getLayer('ndvi'))map.setLayoutProperty('ndvi','visibility','visible');
     if(map.getLayer('altura'))map.setLayoutProperty('altura','visibility','none');
     if(map.getLayer('ndvi-fill'))map.setLayoutProperty('ndvi-fill','visibility','none');
     if(map.getLayer('ndvi-fill-border'))map.setLayoutProperty('ndvi-fill-border','visibility','none');
+    if(map.getLayer('arboles-yolo'))map.setLayoutProperty('arboles-yolo','visibility','none');
     document.getElementById('vig-general').classList.add('show');
+    document.getElementById('vig-gen-title').textContent='🌿 Vigorosidad General';
   } else if(capaActiva==='Altura de planta'){
     if(map.getLayer('ndvi'))map.setLayoutProperty('ndvi','visibility','none');
     if(map.getLayer('altura'))map.setLayoutProperty('altura','visibility','visible');
     if(map.getLayer('ndvi-fill'))map.setLayoutProperty('ndvi-fill','visibility','none');
     if(map.getLayer('ndvi-fill-border'))map.setLayoutProperty('ndvi-fill-border','visibility','none');
+    if(map.getLayer('arboles-yolo'))map.setLayoutProperty('arboles-yolo','visibility','none');
+    vigSeleccionadas={};renderVigSeleccionadas();
+    document.getElementById('vig-general').classList.add('show');
+    document.getElementById('vig-gen-title').textContent='📏 Comparativa de Altura';
+  } else if(capaActiva==='Árboles Detectados (IA)'){
+    if(map.getLayer('ndvi'))map.setLayoutProperty('ndvi','visibility','none');
+    if(map.getLayer('altura'))map.setLayoutProperty('altura','visibility','none');
+    if(map.getLayer('ndvi-fill'))map.setLayoutProperty('ndvi-fill','visibility','none');
+    if(map.getLayer('ndvi-fill-border'))map.setLayoutProperty('ndvi-fill-border','visibility','none');
+    if(map.getLayer('arboles-yolo'))map.setLayoutProperty('arboles-yolo','visibility','visible');
     document.getElementById('vig-general').classList.remove('show');
   } else {
     if(map.getLayer('ndvi'))map.setLayoutProperty('ndvi','visibility','visible');
     if(map.getLayer('altura'))map.setLayoutProperty('altura','visibility','none');
     if(map.getLayer('ndvi-fill'))map.setLayoutProperty('ndvi-fill','visibility','none');
     if(map.getLayer('ndvi-fill-border'))map.setLayoutProperty('ndvi-fill-border','visibility','none');
+    if(map.getLayer('arboles-yolo'))map.setLayoutProperty('arboles-yolo','visibility','none');
     document.getElementById('vig-general').classList.remove('show');
   }
 

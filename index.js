@@ -101,6 +101,32 @@ app.get('/mapa-mango', requireAuth, (req, res) => {
     });
 });
 
+// ===== DASHBOARD =====
+app.get('/dashboard', requireAuth, (req, res) => {
+    res.render('dashboard', { user: req.session.user });
+});
+
+// ===== PRODUCTORES =====
+app.get('/productores', requireAuth, (req, res) => {
+    res.render('productores', { user: req.session.user });
+});
+
+// ===== REPORTES =====
+app.get('/reportes', requireAuth, (req, res) => {
+    res.render('reportes', { user: req.session.user });
+});
+
+// ===== REPORTE GENERAL =====
+app.get('/reporte-general', requireAuth, (req, res) => {
+    res.render('reporte-general', { user: req.session.user });
+});
+
+// ===== REPORTE PRODUCTOR =====
+app.get('/reporte-productor', requireAuth, (req, res) => {
+    res.render('reporte-productor', { user: req.session.user });
+});
+
+
 app.use('/api/mango', mangoRoutes);
 
 // =======================
@@ -170,6 +196,31 @@ app.get('/logout', (req, res) => {
 // =======================
 app.get('/get-shapefile', parcelaCafeController.obtenerParcelasCafeGeoJSON);
 app.get('/obtener-geojson', generalController.obtenerGeoJSON);
+
+// ===== API DASHBOARD =====
+app.get('/api/mango/stats', requireAuth, async (req, res) => {
+    try {
+        const [productores] = await sequelize.query(
+            `SELECT COUNT(DISTINCT p.id) as total FROM productor p`, 
+            {type: QueryTypes.SELECT}
+        );
+        const [parcelas] = await sequelize.query(
+            `SELECT COUNT(*) as total FROM parcelas_mango`,
+            {type: QueryTypes.SELECT}
+        );
+        const [vuelos] = await sequelize.query(
+            `SELECT COUNT(*) as total FROM vuelo_uav`,
+            {type: QueryTypes.SELECT}
+        );
+        const [ndvi] = await sequelize.query(
+            `SELECT AVG(valor_promedio) as promedio, MAX(valor_promedio) as maximo, MIN(valor_promedio) as minimo FROM historial_indice_parcela_mango WHERE indice='NDVI'`,
+            {type: QueryTypes.SELECT}
+        );
+        res.json({ productores: productores.total, parcelas: parcelas.total, vuelos: vuelos.total, ndvi });
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // =======================
 // GEOSERVER PROXY

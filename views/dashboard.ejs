@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GeoMango — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --verde:#2e7d32;--verde2:#4caf50;--verde3:#1b5e20;--verde-dark:#1a3a1c;
+  --plomo:#4a5550;--plomo2:#4f5f50;--plomo-light:#e8ede8;
+  --bg:#f0f2f0;--white:#fff;
+  --text:#1e2a1e;--text2:#4a5f4a;--text3:#7a8f7a;
+  --green:#2e7d32;--greenl:#e8f5e9;
+  --orange:#f57c00;--orangel:#fff3e0;
+  --blue:#1565c0;--bluel:#e3f2fd;
+  --red:#c62828;--redl:#ffebee;
+  --r:12px;--shadow:0 2px 14px rgba(30,42,30,.08);--shadow2:0 4px 24px rgba(30,42,30,.15);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+#header{position:fixed;top:0;left:0;right:0;height:54px;background:linear-gradient(135deg,#1b5e20,#2e7d32,#388e3c);display:flex;align-items:center;padding:0 24px;gap:16px;z-index:1000;box-shadow:0 2px 12px rgba(0,0,0,.2);}
+.h-logo{font-family:'Montserrat',sans-serif;font-size:17px;font-weight:900;color:#fff;letter-spacing:3px;}
+.h-logo span{color:#a5d6a7;}
+.h-sep{width:1px;height:18px;background:rgba(255,255,255,.2);margin:0 6px;}
+.h-sub{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:1.5px;text-transform:uppercase;}
+.h-nav{display:flex;gap:2px;margin-left:24px;}
+.h-nav a{color:rgba(255,255,255,.6);text-decoration:none;font-size:11.5px;font-weight:500;padding:6px 12px;border-radius:7px;transition:all .2s;}
+.h-nav a:hover{background:rgba(255,255,255,.1);color:#fff;}
+.h-nav a.active{background:rgba(255,255,255,.2);color:#fff;font-weight:700;}
+.h-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.h-user{color:rgba(255,255,255,.6);font-size:11.5px;display:flex;align-items:center;gap:5px;}
+.h-user strong{color:#fff;}
+.h-btn{color:rgba(255,255,255,.6);font-size:11px;text-decoration:none;padding:5px 11px;border:1px solid rgba(255,255,255,.2);border-radius:7px;transition:all .2s;}
+.h-btn:hover{background:rgba(255,255,255,.1);color:#fff;}
+.main{margin-top:54px;padding:20px 24px;max-width:1400px;margin-left:auto;margin-right:auto;}
+.welcome{background:linear-gradient(135deg,#1b5e20,#2e7d32,#388e3c);border-radius:var(--r);padding:24px 30px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;color:#fff;box-shadow:var(--shadow2);position:relative;overflow:hidden;}
+.welcome::before{content:'';position:absolute;right:-30px;top:-30px;width:200px;height:200px;background:rgba(255,255,255,.04);border-radius:50%;}
+.w-title{font-family:'Montserrat',sans-serif;font-size:19px;font-weight:800;margin-bottom:5px;}
+.w-title span{color:#a5d6a7;}
+.w-sub{font-size:12px;color:rgba(255,255,255,.6);line-height:1.6;}
+.w-date{font-size:11px;color:rgba(255,255,255,.35);margin-top:5px;}
+.w-btn{background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.3);padding:11px 22px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:8px;transition:all .2s;font-family:'Montserrat',sans-serif;white-space:nowrap;flex-shrink:0;}
+.w-btn:hover{background:rgba(255,255,255,.25);}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+.kpi{background:var(--white);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;border-left:4px solid var(--plomo2);transition:transform .2s,box-shadow .2s;}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow2);}
+.kpi.g{border-left-color:var(--verde);}
+.kpi.b{border-left-color:var(--blue);}
+.kpi.o{border-left-color:var(--orange);}
+.kpi.r{border-left-color:var(--red);}
+.kpi-icon{font-size:28px;flex-shrink:0;}
+.kpi-num{font-family:'Montserrat',sans-serif;font-size:28px;font-weight:900;color:var(--text);line-height:1;}
+.kpi-label{font-size:11.5px;color:var(--text2);margin-top:3px;font-weight:500;}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:1px;}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.col2{grid-column:span 2;}
+.card{background:var(--white);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.card-title{font-family:'Montserrat',sans-serif;font-size:11.5px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:7px;}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;}
+.badge.def{background:var(--plomo-light);color:var(--plomo2);}
+.badge.g{background:var(--greenl);color:var(--green);}
+.badge.b{background:var(--bluel);color:var(--blue);}
+.badge.o{background:var(--orangel);color:var(--orange);}
+.pt{width:100%;border-collapse:collapse;}
+.pt th{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:8px 10px;border-bottom:2px solid var(--plomo-light);text-align:left;}
+.pt td{padding:9px 10px;border-bottom:1px solid #f0f2f0;font-size:12.5px;}
+.pt tr:last-child td{border-bottom:none;}
+.pt tr:hover td{background:#f5f7f5;}
+.av{width:30px;height:30px;border-radius:50%;background:var(--verde);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pname{display:flex;align-items:center;gap:9px;}
+.tb{display:inline-block;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600;}
+.tb.alto{background:var(--greenl);color:var(--green);}
+.tb.medio{background:#f9fbe7;color:#827717;}
+.tb.bajo{background:var(--orangel);color:var(--orange);}
+.tb.muyb{background:var(--redl);color:var(--red);}
+.ind-list{display:flex;flex-direction:column;gap:8px;}
+.ind-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;background:var(--bg);transition:background .15s;}
+.ind-item:hover{background:var(--plomo-light);}
+.ind-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.ind-name{font-size:12px;font-weight:600;color:var(--text);}
+.ind-desc{font-size:10px;color:var(--text3);margin-top:1px;}
+.ind-bar{height:4px;border-radius:3px;background:#dde5dd;margin-top:4px;overflow:hidden;}
+.ind-fill{height:100%;border-radius:3px;}
+.rank-list{display:flex;flex-direction:column;gap:6px;}
+.rank-item{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:9px;background:var(--bg);}
+.rank-pos{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:800;color:var(--text3);width:18px;flex-shrink:0;}
+.rank-name{flex:1;font-size:11.5px;font-weight:500;}
+.rank-bar-w{width:65px;}
+.rank-bar{height:5px;border-radius:3px;background:#dde5dd;overflow:hidden;}
+.rank-fill{height:100%;border-radius:3px;}
+.rank-val{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;width:42px;text-align:right;}
+.st-list{display:flex;flex-direction:column;gap:8px;}
+.st-item{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:9px;background:var(--bg);}
+.st-left{display:flex;align-items:center;gap:9px;}
+.st-name{font-size:12px;font-weight:600;}
+.st-desc{font-size:10px;color:var(--text3);}
+.st-dot{width:10px;height:10px;border-radius:50%;}
+.st-dot.ok{background:var(--verde);box-shadow:0 0 5px rgba(46,125,50,.5);}
+.st-dot.warn{background:var(--orange);}
+.st-dot.off{background:#bbb;}
+.act-list{display:flex;flex-direction:column;}
+.act-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f0f2f0;}
+.act-item:last-child{border-bottom:none;}
+.act-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.act-text{font-size:12px;line-height:1.5;color:var(--text);}
+.act-time{font-size:10px;color:var(--text3);margin-top:1px;}
+.chart-wrap{position:relative;height:185px;}
+.footer{text-align:center;padding:16px;font-size:11px;color:var(--text3);margin-top:4px;}
+.card,.kpi,.welcome{animation:fadeUp .4s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.kpi:nth-child(1){animation-delay:.05s}.kpi:nth-child(2){animation-delay:.1s}.kpi:nth-child(3){animation-delay:.15s}.kpi:nth-child(4){animation-delay:.2s}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr);}.grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:700px){.kpi-grid{grid-template-columns:1fr;}.grid{grid-template-columns:1fr;}.h-nav{display:none;}}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="h-logo">GEO<span>MANGO</span></div>
+  <div class="h-sep"></div>
+  <div class="h-sub">Monitoreo Digital</div>
+  <nav class="h-nav">
+    <a href="/dashboard" class="active">📊 Dashboard</a>
+    <a href="/mapa-mango">🗺️ Mapa</a>
+    <a href="/productores">👨‍🌾 Productores</a>
+    <a href="/reportes">📄 Reportes</a>
+  </nav>
+  <div class="h-right">
+    <div class="h-user">👤 <strong><%= locals.user ? locals.user.nombre || locals.user.usuario : '' %></strong></div>
+    <a href="/logout" class="h-btn">Salir</a>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="welcome">
+    <div>
+      <div class="w-title">Bienvenido al Sistema <span>GeoMango</span></div>
+      <div class="w-sub">Plataforma de monitoreo digital del cultivo de mango · Lambayeque, Perú</div>
+      <div class="w-date" id="fecha-actual"></div>
+    </div>
+    <a href="/mapa-mango" class="w-btn">🗺️ Abrir Mapa Interactivo</a>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi g"><div class="kpi-icon">👨‍🌾</div><div><div class="kpi-num" id="kpi-prod">—</div><div class="kpi-label">Productores</div><div class="kpi-sub">registrados en el sistema</div></div></div>
+    <div class="kpi"><div class="kpi-icon">🌿</div><div><div class="kpi-num" id="kpi-parc">—</div><div class="kpi-label">Parcelas</div><div class="kpi-sub">con geometría registrada</div></div></div>
+    <div class="kpi b"><div class="kpi-icon">✈️</div><div><div class="kpi-num" id="kpi-vuelos">—</div><div class="kpi-label">Vuelos UAV</div><div class="kpi-sub">con imágenes procesadas</div></div></div>
+    <div class="kpi o"><div class="kpi-icon">📊</div><div><div class="kpi-num" id="kpi-ndvi">—</div><div class="kpi-label">NDVI Promedio</div><div class="kpi-sub">vigorosidad general</div></div></div>
+  </div>
+
+  <div class="grid">
+    <!-- TABLA PRODUCTORES -->
+    <div class="card col2">
+      <div class="card-hd">
+        <div class="card-title">👨‍🌾 Productores y parcelas</div>
+        <span class="badge g" id="badge-prod">—</span>
+      </div>
+      <table class="pt">
+        <thead><tr><th>Productor</th><th>DNI</th><th>Parcela</th><th>Área (ha)</th><th>NDVI</th><th>Vigorosidad</th></tr></thead>
+        <tbody id="tabla-prod"><tr><td colspan="6" style="text-align:center;color:#bbb;padding:20px">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- ÍNDICES -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">🛰️ Índices espectrales</div>
+        <span class="badge b">UAV</span>
+      </div>
+      <div class="ind-list">
+        <div class="ind-item"><div class="ind-icon" style="background:#e8f5e9">🌿</div><div style="flex:1"><div class="ind-name">NDVI — Vigorosidad</div><div class="ind-desc">Índice de vegetación diferencial</div><div class="ind-bar"><div class="ind-fill" style="width:85%;background:linear-gradient(90deg,#81c784,#2e7d32)"></div></div></div></div>
+        <div class="ind-item"><div class="ind-icon" style="background:#fff3e0">☀️</div><div style="flex:1"><div class="ind-name">Actividad Fotosintética</div><div class="ind-desc">Capacidad de fotosíntesis activa</div><div class="ind-bar"><div class="ind-fill" style="width:70%;background:linear-gradient(90deg,#ffb74d,#f57c00)"></div></div></div></div>
+        <div class="ind-item"><div class="ind-icon" style="background:#f9fbe7">🍃</div><div style="flex:1"><div class="ind-name">Concentración de Clorofila</div><div class="ind-desc">Contenido clorofílico foliar</div><div class="ind-bar"><div class="ind-fill" style="width:60%;background:linear-gradient(90deg,#dce775,#afb42b)"></div></div></div></div>
+        <div class="ind-item"><div class="ind-icon" style="background:#e8f5e9">🧪</div><div style="flex:1"><div class="ind-name">Nitrógeno Foliar</div><div class="ind-desc">Contenido de nitrógeno en hojas</div><div class="ind-bar"><div class="ind-fill" style="width:55%;background:linear-gradient(90deg,#a5d6a7,#2e7d32)"></div></div></div></div>
+        <div class="ind-item"><div class="ind-icon" style="background:#e3f2fd">📏</div><div style="flex:1"><div class="ind-name">Altura de Planta</div><div class="ind-desc">Modelo digital de superficie UAV</div><div class="ind-bar"><div class="ind-fill" style="width:75%;background:linear-gradient(90deg,#90caf9,#1565c0)"></div></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- RANKING NDVI -->
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🏆 Ranking NDVI</div><span class="badge def">Vigorosidad</span></div>
+      <div class="rank-list" id="ranking-ndvi"><div style="text-align:center;color:#bbb;font-size:12px;padding:16px">Cargando...</div></div>
+    </div>
+
+    <!-- RESUMEN NDVI -->
+    <div class="card">
+      <div class="card-hd"><div class="card-title">📊 Resumen NDVI</div></div>
+      <div id="resumen-ndvi"><div style="text-align:center;color:#bbb;font-size:12px;padding:16px">Cargando...</div></div>
+    </div>
+
+    <!-- ESTADO SISTEMA -->
+    <div class="card">
+      <div class="card-hd"><div class="card-title">⚙️ Estado del sistema</div></div>
+      <div class="st-list">
+        <div class="st-item"><div class="st-left"><span style="font-size:17px">🗄️</span><div><div class="st-name">PostgreSQL + PostGIS</div><div class="st-desc">gis_mango</div></div></div><div class="st-dot ok"></div></div>
+        <div class="st-item"><div class="st-left"><span style="font-size:17px">🌐</span><div><div class="st-name">GeoServer</div><div class="st-desc">workspace mango</div></div></div><div class="st-dot" id="st-gs"></div></div>
+        <div class="st-item"><div class="st-left"><span style="font-size:17px">🗺️</span><div><div class="st-name">MapLibre GL 3.6.2</div><div class="st-desc">Motor de mapas web</div></div></div><div class="st-dot ok"></div></div>
+        <div class="st-item"><div class="st-left"><span style="font-size:17px">🌡️</span><div><div class="st-name">ThingSpeak IoT</div><div class="st-desc">Estación meteorológica</div></div></div><div class="st-dot ok"></div></div>
+        <div class="st-item"><div class="st-left"><span style="font-size:17px">📐</span><div><div class="st-name">Parcelas GIS</div><div class="st-desc" id="st-parc-desc">Cargando...</div></div></div><div class="st-dot ok"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- GRÁFICA VUELOS -->
+    <div class="card col2">
+      <div class="card-hd"><div class="card-title">📈 NDVI por parcela</div><span class="badge g">Último análisis</span></div>
+      <div class="chart-wrap"><canvas id="chart-ndvi"></canvas></div>
+    </div>
+
+    <!-- ACTIVIDAD -->
+    <div class="card">
+      <div class="card-hd"><div class="card-title">🕐 Actividad reciente</div></div>
+      <div class="act-list" id="actividad"></div>
+    </div>
+  </div>
+
+  <div class="footer">GeoMango © 2026 · Sistema de Monitoreo Digital del Cultivo de Mango · Lambayeque, Perú</div>
+</div>
+
+<script>
+const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const now=new Date();
+document.getElementById('fecha-actual').textContent=`${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
+
+function ndviCl(v){
+  if(v>0.75)return{c:'#2e7d32',bg:'#4caf50',lbl:'Muy alto',cls:'alto'};
+  if(v>0.55)return{c:'#7cb342',bg:'#9ccc65',lbl:'Medio',cls:'medio'};
+  if(v>0.20)return{c:'#f57c00',bg:'#ffa726',lbl:'Bajo',cls:'bajo'};
+  return{c:'#c62828',bg:'#ef5350',lbl:'Muy bajo',cls:'muyb'};
+}
+
+async function cargar(){
+  // Stats generales
+  try{
+    const stats=await fetch('/api/mango/stats').then(r=>r.json()).catch(()=>({}));
+    document.getElementById('kpi-prod').textContent=stats.productores||'—';
+    document.getElementById('kpi-parc').textContent=stats.parcelas||'—';
+    document.getElementById('kpi-vuelos').textContent=stats.vuelos||'—';
+    document.getElementById('badge-prod').textContent=`${stats.productores||0} registrados`;
+    if(stats.ndvi?.promedio){
+      document.getElementById('kpi-ndvi').textContent=parseFloat(stats.ndvi.promedio).toFixed(3);
+    }
+    if(stats.parcelas) document.getElementById('st-parc-desc').textContent=`${stats.parcelas} parcelas registradas`;
+  }catch(e){}
+
+  // NDVI por parcelas
+  try{
+    const ndvi=await fetch('/api/mango/ndvi-parcelas').then(r=>r.json()).catch(()=>({features:[]}));
+    const features=ndvi.features||[];
+    renderTabla(features);
+    renderRanking(features);
+    renderResumen(features);
+    renderChartNdvi(features);
+  }catch(e){}
+
+  // GeoServer status
+  try{
+    const r=await fetch('/geoserver-capas',{signal:AbortSignal.timeout(4000)});
+    document.getElementById('st-gs').className='st-dot '+(r.ok?'ok':'warn');
+  }catch(e){document.getElementById('st-gs').className='st-dot warn';}
+
+  renderActividad();
+}
+
+function renderTabla(features){
+  if(!features.length){
+    document.getElementById('tabla-prod').innerHTML='<tr><td colspan="6" style="text-align:center;color:#bbb;padding:20px">Sin datos</td></tr>';
+    return;
+  }
+  document.getElementById('tabla-prod').innerHTML=features.map(f=>{
+    const p=f.properties;
+    const ndvi=parseFloat(p.ndvi)||0;
+    const cl=ndviCl(ndvi);
+    const ini=(p.lote||'P').substring(0,2).toUpperCase();
+    return `<tr>
+      <td><div class="pname"><div class="av">${ini}</div><span>${p.lote||'Parcela'}</span></div></td>
+      <td style="color:var(--text2);font-size:11px">${p.productor_dni||'—'}</td>
+      <td style="font-size:11px">${p.lote||'—'}</td>
+      <td style="font-size:11px">${p.area||'—'}</td>
+      <td style="font-family:'Montserrat',sans-serif;font-weight:700;color:${cl.c}">${ndvi.toFixed(3)}</td>
+      <td><span class="tb ${cl.cls}">${cl.lbl}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderRanking(features){
+  if(!features.length){document.getElementById('ranking-ndvi').innerHTML='<div style="text-align:center;color:#bbb;font-size:12px;padding:12px">Sin datos NDVI</div>';return;}
+  const sorted=[...features].sort((a,b)=>parseFloat(b.properties.ndvi||0)-parseFloat(a.properties.ndvi||0));
+  const medallas=['🥇','🥈','🥉'];
+  document.getElementById('ranking-ndvi').innerHTML=sorted.map((f,i)=>{
+    const p=f.properties;
+    const v=parseFloat(p.ndvi)||0;
+    const cl=ndviCl(v);
+    return `<div class="rank-item">
+      <div class="rank-pos">${medallas[i]||`${i+1}.`}</div>
+      <div class="rank-name">${p.lote||'Parcela'}</div>
+      <div class="rank-bar-w"><div class="rank-bar"><div class="rank-fill" style="width:${Math.min(v*100,100)}%;background:${cl.bg}"></div></div></div>
+      <div class="rank-val" style="color:${cl.c}">${v.toFixed(3)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderResumen(features){
+  const vals=features.map(f=>parseFloat(f.properties.ndvi||0)).filter(v=>v>0);
+  if(!vals.length){document.getElementById('resumen-ndvi').innerHTML='<div style="text-align:center;color:#bbb;font-size:12px;padding:12px">Sin datos</div>';return;}
+  const prom=(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(3);
+  const max=Math.max(...vals).toFixed(3);
+  const min=Math.min(...vals).toFixed(3);
+  const alto=vals.filter(v=>v>0.75).length;
+  const medio=vals.filter(v=>v>0.55&&v<=0.75).length;
+  const bajo=vals.filter(v=>v<=0.55).length;
+  document.getElementById('resumen-ndvi').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+      <div style="text-align:center;padding:10px;background:var(--bg);border-radius:9px">
+        <div style="font-family:'Montserrat',sans-serif;font-size:17px;font-weight:800;color:var(--plomo)">${prom}</div>
+        <div style="font-size:9px;color:var(--text3)">Promedio</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--greenl);border-radius:9px">
+        <div style="font-family:'Montserrat',sans-serif;font-size:17px;font-weight:800;color:var(--verde)">${max}</div>
+        <div style="font-size:9px;color:var(--verde)">Máximo</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--orangel);border-radius:9px">
+        <div style="font-family:'Montserrat',sans-serif;font-size:17px;font-weight:800;color:var(--orange)">${min}</div>
+        <div style="font-size:9px;color:var(--orange)">Mínimo</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+      <div style="text-align:center;padding:8px;background:var(--greenl);border-radius:9px">
+        <div style="font-family:'Montserrat',sans-serif;font-size:16px;font-weight:800;color:var(--verde)">${alto}</div>
+        <div style="font-size:9px;color:var(--verde)">🟢 Alto</div>
+      </div>
+      <div style="text-align:center;padding:8px;background:#f9fbe7;border-radius:9px">
+        <div style="font-family:'Montserrat',sans-serif;font-size:16px;font-weight:800;color:#7cb342">${medio}</div>
+        <div style="font-size:9px;color:#7cb342">🟡 Medio</div>
+      </div>
+      <div style="text-align:center;padding:8px;background:var(--orangel);border-radius:9px">
+        <div style="font-family:'Montserrat',sans-serif;font-size:16px;font-weight:800;color:var(--orange)">${bajo}</div>
+        <div style="font-size:9px;color:var(--orange)">🔴 Bajo</div>
+      </div>
+    </div>`;
+}
+
+function renderChartNdvi(features){
+  const ctx=document.getElementById('chart-ndvi').getContext('2d');
+  const labels=features.map(f=>f.properties.lote||'P');
+  const vals=features.map(f=>parseFloat(f.properties.ndvi||0));
+  const colors=vals.map(v=>ndviCl(v).bg);
+  new Chart(ctx,{type:'bar',
+    data:{labels,datasets:[{label:'NDVI',data:vals,backgroundColor:colors,borderColor:colors.map(c=>c+'cc'),borderWidth:1,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`NDVI: ${c.parsed.y.toFixed(3)}`}}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8f7a'}},
+        y:{beginAtZero:true,max:1,ticks:{stepSize:0.2,font:{size:10},color:'#7a8f7a'},grid:{color:'rgba(0,0,0,.04)'}}
+      }}
+  });
+}
+
+function renderActividad(){
+  document.getElementById('actividad').innerHTML=[
+    {dot:'#2e7d32',txt:'Imágenes UAV procesadas y publicadas en GeoServer',t:'2026-05-08'},
+    {dot:'#1565c0',txt:'8 parcelas con NDVI calculado desde raster UAV',t:'2026-05-08'},
+    {dot:'#f57c00',txt:'Estación IoT ThingSpeak conectada y operativa',t:'2026-05-06'},
+    {dot:'#2e7d32',txt:'Capa de altura de planta publicada en GeoServer',t:'2026-05-05'},
+    {dot:'#7cb342',txt:'Sistema GeoMango inicializado en Lambayeque',t:'2026-05-01'},
+  ].map(i=>`<div class="act-item"><div class="act-dot" style="background:${i.dot}"></div><div><div class="act-text">${i.txt}</div><div class="act-time">${i.t}</div></div></div>`).join('');
+}
+
+cargar();
+</script>
+</body>
+</html>

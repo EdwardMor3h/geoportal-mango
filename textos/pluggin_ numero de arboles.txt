@@ -1,0 +1,59 @@
+import numpy as np
+from scipy import ndimage
+from osgeo import gdal, ogr, osr
+
+# ===== CONFIGURACIÓN =====
+raster_path = 'C:/GeoServer/altura_recortado.tif'
+output_path = 'C:/GeoServer/arboles_detectados.gpkg'
+min_altura = 1.5      # altura mínima para considerar árbol (metros)
+radio_busqueda = 15   # radio en píxeles para detectar máximos (~1.5m con píxel de 0.1m)
+
+# ===== LEER RASTER =====
+ds = gdal.Open(raster_path)
+banda = ds.GetRasterBand(1)
+datos = banda.ReadAsArray().astype(float)
+nodata = banda.GetNoDataValue()
+gt = ds.GetGeoTransform()
+srs = osr.SpatialReference()
+srs.ImportFromWkt(ds.GetProjection())
+
+# Reemplazar nodata con 0
+if nodata is not None:
+    datos[datos == nodata] = 0
+datos[datos < 0] = 0
+
+# ===== DETECTAR MÁXIMOS LOCALES =====
+datos_suavizados = ndimage.gaussian_filter(datos, sigma=1)
+maximos = ndimage.maximum_filter(datos_suavizados, size=radio_busqueda)
+mask_maximos = (datos_suavizados == maximos) & (datos_suavizados >= min_altura)
+
+# Obtener coordenadas de los máximos
+filas, cols = np.where(mask_maximos)
+print(f'Árboles detectados: {len(filas)}')
+
+# ===== GUARDAR COMO GEOPACKAGE =====
+driver = ogr.GetDriverByName('GPKG')
+import os
+if os.path.exists(output_path):
+    driver.DeleteDataSource(output_path)
+ds_out = driver.CreateDataSource(output_path)
+layer = ds_out.CreateLayer('arboles', srs, ogr.wkbPoint)
+
+# Agregar campos
+layer.CreateField(ogr.FieldDefn('id_arbol', ogr.OFTInteger))
+layer.CreateField(ogr.FieldDefn('altura_m', ogr.OFTReal))
+
+defn = layer.GetLayerDefn()
+for i, (fila, col) in enumerate(zip(filas, cols)):
+    x = gt[0] + col * gt[1] + fila * gt[2]
+    y = gt[3] + col * gt[4] + fila * gt[5]
+    altura = float(datos[fila, col])
+    
+    feat = ogr.Feature(defn)
+    feat.SetGeometry(ogr.CreateGeometryFromWkt(f'POINT ({x} {y})'))
+    feat.SetField('id_arbol', i + 1)
+    feat.SetField('altura_m', round(altura, 3))
+    layer.CreateFeature(feat)
+
+ds_out = None
+print(f'✅ Guardado en: {output_path}')

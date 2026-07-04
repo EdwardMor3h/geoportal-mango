@@ -101,3 +101,30 @@ router.get('/parcelas-por-dni', async (req, res) => {
         res.json(result[0].geojson);
     } catch(err) { res.status(500).json({ error: err.message }); }
 });
+
+// Árboles detectados con YOLO
+router.get('/arboles-yolo', async (req, res) => {
+    try {
+        const result = await sequelize.query(
+            `SELECT json_build_object(
+                'type', 'FeatureCollection',
+                'features', json_agg(json_build_object(
+                    'type', 'Feature',
+                    'geometry', ST_AsGeoJSON(ST_Transform(geometry, 4326))::json,
+                    'properties', json_build_object(
+                        'id_arbol', id_arbol,
+                        'confianza', confianza,
+                        'ndvi', ndvi,
+                        'altura_m', altura_m,
+                        'parcela_gid', parcela_gid
+                    )
+                ))
+            ) AS geojson
+            FROM arboles_yolo`,
+            { type: QueryTypes.SELECT }
+        );
+        res.json(result[0].geojson);
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
